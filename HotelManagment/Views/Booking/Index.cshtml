@@ -1,0 +1,175 @@
+﻿@model HotelManagment.ViewModel.BookingViewModel
+@using HotelManagment.Models
+@{
+    ViewBag.Title = "Index";
+}
+<link href="~/Content/themes/base/jquery-ui.min.css" rel="stylesheet" />
+<link href="http://code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css" rel="Stylesheet" type="text/css" />
+<link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.no-icons.min.css" rel="stylesheet">
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.css" rel="stylesheet">
+
+@section scripts {
+    <script src="~/Scripts/jquery-1.10.2.min.js"></script>
+    <script src="~/Scripts/jquery-ui-1.13.0.min.js"></script>
+    <script type="text/javascript">
+    $(document).ready(function () {
+        DateTimePicker();
+        $("#btnSave").click(function () {
+            if (!$("#formCustomerBooking").valid()) {
+                return;
+            }
+            AddCustomerBooking();
+        });
+        LoadBookingHistory();
+    });
+    function DateTimePicker() {
+        $(".datepicker").datepicker({
+            dateFormat: 'dd-M-yy',
+            changeMonth: true,
+            changeYear: true,
+            showOn: 'both',
+            buttonImageOnly: true,
+            buttonImage: "http://jqueryui.com/resources/demos/datepicker/images/calendar.gif",
+            sideBySide: true,
+            controlType: 'select',
+            /*buttonText: '<i class="fa fa-calendar" ></i>',*/
+            minDate: new Date()
+        });
+
+        $("#txtBookingFrom").change(function () {
+            var date2 = $("#txtBookingFrom").datepicker('getDate', '+1d');
+            date2.setDate(date2.getDate() + 1);
+            $("#txtBookingTo").val().datepicker('option', 'minDate', date2);
+            $("#txtBookingTo").datepicker('setDate', date2);
+        });
+    }
+
+    function LoadBookingHistory() {
+        $.ajax({
+            async: true,
+            type: 'GET',
+            dataType: 'HTML',
+            contentType: false,
+            processType: false,
+            url: '@Url.Action("GetAllBookingHistory")',
+            success: function (data) {
+                $("#divBookingHistory").html(data);
+            },
+            error: function () {
+                alert("Error in Loading LoadBookingHistory()");
+            }
+        });
+    }
+
+    function ResetBooking() {
+        $("#txtCustomerName").val('');
+        $("#txtCustomerAddress").val('');
+        $("#txtCustomerPhone").val('');
+        $("#ddAssignRoomId").val(1);
+        $("#txtNoOfMembers").val('');
+        $("#txtCustomerName").focus();
+    }
+
+    function AddCustomerBooking() {
+        var bookingViewModel = {};
+        bookingViewModel.CustomerName = $("#txtCustomerName").val();
+        bookingViewModel.CustomerAddress = $("#txtCustomerAddress").val();
+        bookingViewModel.CustomerPhone = $("#txtCustomerPhone").val();
+        bookingViewModel.BookingFrom = $("#txtBookingFrom").val();
+        bookingViewModel.BookingTo = $("#txtBookingTo").val();
+        bookingViewModel.AssignRoomId = $("#ddAssignRoomId").val();
+        bookingViewModel.NoOfMembers = $("#txtNoOfMembers").val();
+        $.ajax({
+            async: true,
+            type: "POST",
+            dataType: 'JSON',
+            contentType: 'application/json; charset=utf-8',
+            url: '@Url.Action("AddBooking")',
+            data: JSON.stringify(bookingViewModel),
+            success: function (data) {
+                if (data.success === true) {
+                    alert(data.message);
+                    ResetBooking();
+                    LoadBookingHistory();
+                }
+            },
+            error: function () {
+                alert("There Is an Error");
+            }
+        });
+    }
+
+    </script>
+}
+<div style="margin-top: 20px">
+    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#divNewBooking" data-backdrop="static" data-keyboard="false">New Booking</button>
+</div>
+<div id="divNewBooking" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">New Booking</h4>
+            </div>
+            <div class="modal-body">
+                <form id="formCustomerBooking" class="form-group">
+                    <div class="container">
+                        <div class="row">
+                            <div class="form-group">
+                                @Html.LabelFor(model => model.CustomerName, new { @class = "control-lable" })
+                                @Html.TextBoxFor(model => model.CustomerName, new { @class = "form-control", id = "txtCustomerName" })
+                                @Html.ValidationMessageFor(model => model.CustomerName, null, new { @class = "text-danger" })
+                            </div>
+                            <div class="form-group">
+                                @Html.LabelFor(model => model.CustomerAddress, new { @class = "control-lable" })
+                                @Html.TextBoxFor(model => model.CustomerAddress, new { @class = "form-control", id = "txtCustomerAddress" })
+                                @Html.ValidationMessageFor(model => model.CustomerAddress, null, new { @class = "text-danger" })
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group">
+                                @Html.LabelFor(model => model.CustomerPhone, new { @class = "control-lable" })
+                                @Html.TextBoxFor(model => model.CustomerPhone, new { @class = "form-control", id = "txtCustomerPhone" })
+                                @Html.ValidationMessageFor(model => model.CustomerPhone, null, new { @class = "text-danger" })
+                            </div>
+                            <div class="form-group">
+                                @Html.LabelFor(model => model.BookingFrom, new { @class = "control-lable" })
+                                @Html.EditorFor(model => model.BookingFrom, new { htmlAttributes = new { @readonly = " true", value = Model.BookingFrom.ToString("dd-MMM-yyyy"), @class = "form-control datepicker", @id = "txtBookingFrom" } })
+                                @Html.ValidationMessageFor(model => model.BookingFrom, null, new { @class = "text-danger" })
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group">
+                                @Html.LabelFor(model => model.BookingTo, new { @class = "control-lable" })
+                                @Html.EditorFor(model => model.BookingTo, new { htmlAttributes = new { @readonly = " true", value = Model.BookingTo.ToString("dd-MMM-yyyy"), @class = "form-control datepicker", @id = "txtBookingTo" } })
+                                @Html.ValidationMessageFor(model => model.BookingTo, null, new { @class = "text-danger" })
+                            </div>
+                            <div class="form-group">
+                                @Html.LabelFor(model => model.AssignRoomId, new { @class = "control-lable" })
+                                @Html.DropDownListFor(model => model.AssignRoomId, Model.ListOfRooms, new { @class = "form-control", id = "ddAssignRoomId" })
+                                @Html.ValidationMessageFor(model => model.AssignRoomId, null, new { @class = "text-danger" })
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group">
+                                @Html.LabelFor(model => model.NoOfMembers, new { @class = "control-lable" })
+                                @Html.TextBoxFor(model => model.NoOfMembers, new { @class = "form-control", id = "txtNoOfMembers" })
+                                @Html.ValidationMessageFor(model => model.NoOfMembers, null, new { @class = "txt-danger" })
+                            </div>
+                            <div class="form-group">
+
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="btnSave" type="submit" class="btn btn-success" data-save="modal">Save</button>&nbsp;
+                <button type="button" data-dismiss="modal" class="btn btn-danger">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div style="margin-top:10px"></div>
+<div id="divBookingHistory"></div>
+
